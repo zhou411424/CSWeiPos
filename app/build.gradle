@@ -1,0 +1,76 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt'
+
+//防止签名信息被反编译后破解，所以存储在local.properties
+def keystoreFilepath = ''
+def keystorePSW = ''
+def keystoreAlias = ''
+def keystoreAliasPSW = ''
+// default keystore file, PLZ config file path in local.properties
+def keyfile = file('s.keystore.temp')
+
+Properties properties = new Properties()
+// local.properties file in the root director
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+keystoreFilepath = properties.getProperty("keystore.path")
+
+if (keystoreFilepath) {
+    keystorePSW = properties.getProperty("keystore.password")
+    keystoreAlias = properties.getProperty("keystore.alias")
+    keystoreAliasPSW = properties.getProperty("keystore.alias_password")
+    keyfile = file(keystoreFilepath)
+}
+
+android {
+
+    signingConfigs {
+        config {
+            keyAlias keystoreAlias
+            keyPassword keystorePSW
+            storeFile keyfile
+            storePassword keystoreAliasPSW
+        }
+    }
+    compileSdkVersion 26
+    buildToolsVersion "26.0.1"
+    defaultConfig {
+        applicationId "com.chuanshi.weipos"
+        minSdkVersion 15
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled true//压缩代码
+            useProguard true//混淆代码（默认为true，可以不添加）
+            shrinkResources true//资源压缩
+            zipAlignEnabled true
+            if (keyfile.exists()) {
+                signingConfig signingConfigs.config
+            }
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+    compile files('libs/CashierInvoke_v1.4_201708281915.jar')
+    compile files('libs/wopensdk-1.0.jar')
+    compile files('libs/WeiposSDKII-bin-2.0.jar')
+    implementation files('libs/CashierInvoke_v1.4_201708281915.jar')
+    implementation files('libs/WeiposSDKII-bin-2.0.jar')
+    implementation files('libs/wopensdk-1.0.jar')
+}

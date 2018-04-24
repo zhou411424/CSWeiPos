@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">智慧时代</string>
+    <string name="network_error">加载失败</string>
+    <string name="refresh_reload">刷新重试</string>
+</resources>
