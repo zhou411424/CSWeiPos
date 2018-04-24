@@ -86,8 +86,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Button mPrintBtn = (Button) findViewById(R.id.btn_print);
         Button mPrintBillBtn = (Button) findViewById(R.id.btn_print_bill);
-        mPrintBtn.setVisibility(View.GONE);
-        mPrintBillBtn.setVisibility(View.GONE);
+        mPrintBtn.setVisibility(View.VISIBLE);
+        mPrintBillBtn.setVisibility(View.VISIBLE);
         mPrintBtn.setOnClickListener(this);
         mPrintBillBtn.setOnClickListener(this);
 
@@ -680,6 +680,97 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+
+        if (mLatticePrinter == null) {
+            Log.e(TAG, "打印机未初始化");
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (!TextUtils.isEmpty(title)) {
+            sb.append(title+"\n");
+        }
+
+        if (!TextUtils.isEmpty(table)) {
+            sb.append("桌台："+table+"\n");
+        }
+        if (!TextUtils.isEmpty(orderNumber)) {
+            sb.append("单号："+orderNumber+"\n");
+        }
+        if (!TextUtils.isEmpty(time)) {
+            sb.append("时间："+time+"\n");
+        }
+        sb.append("********************************\n");
+        sb.append("名称            价*量        金额\n");
+        for (int i = 0; i < categories.size(); i++) {
+            CategoryInfo categoryInfo = categories.get(i);
+            String category = categoryInfo.getCategory();
+            String amount = categoryInfo.getAmount();
+            String number = categoryInfo.getNumber();
+            List<GoodInfo> goodInfos = categoryInfo.getGoodsList();
+            if (goodInfos != null && !goodInfos.isEmpty()) {
+                for (int j = 0;j < goodInfos.size(); j++) {
+                    GoodInfo goodInfo = goodInfos.get(j);
+                    if (goodInfo != null) {
+                        Log.d(TAG, "name="+goodInfo.getName()+", num="+goodInfo.getNum()+", amount="+goodInfo.getAmount());
+                        sb.append(goodInfo.getName() + goodInfo.getNum() + goodInfo.getAmount()+"\n");
+                    }
+                }
+            }
+            sb.append("      "+category+":"+number+"       "+amount+"\n");
+        }
+
+        sb.append("********************************\n");
+
+        if (!TextUtils.isEmpty(heji)) {
+            String hejiStr = "合计："+heji+"\n";
+            sb.append(hejiStr);
+        }
+
+        sb.append("支付方式                    金额\n");
+        if (payTypes != null && !payTypes.isEmpty()) {
+            for (int i = 0;i < payTypes.size(); i++) {
+                PayType payType = payTypes.get(i);
+                if (payType != null) {
+                    sb.append(payType.getPayType() + " " + payType.getAmount()+"\n");
+                }
+            }
+        }
+        sb.append("********************************\n");
+        if (!TextUtils.isEmpty(sdje)) {
+            sb.append("收到金额："+sdje+"元    找零："+zl+"元\n");
+        }
+        if (!TextUtils.isEmpty(actualPayAmount)) {
+            sb.append("实付金额："+actualPayAmount+"元    优惠："+couponAmount+"元\n");
+        }
+        if (!TextUtils.isEmpty(remainAmount)) {
+            sb.append("姓名："+memberName+"\n");
+            sb.append("卡号："+memberNo+"\n");
+            sb.append("余额："+remainAmount+"\n");
+        }
+        if (!TextUtils.isEmpty(discount)) {
+            sb.append("姓名："+memberName+"\n");
+            sb.append("卡号："+memberNo+"\n");
+            sb.append("折扣："+discount+"\n");
+        }
+        if (!TextUtils.isEmpty(welcome)) {
+            sb.append(welcome+"\n");
+        }
+        String text = sb.toString();
+        mLatticePrinter.printText(text, LatticePrinter.FontFamily.SONG,
+                LatticePrinter.FontSize.LARGE, LatticePrinter.FontStyle.BOLD);
+
+
+        mLatticePrinter.submitPrint();//提交打印事件之后，才会开始打印
+        //打印监听，返回打印信息
+        mLatticePrinter.setOnEventListener(new IPrint.OnEventListener() {
+            @Override
+            public void onEvent(int what, String info) {
+                String message = getPrintErrorInfo(what, info);
+                Log.d(TAG, "onPrint==>onEvent...message="+message);
+            }
+        });
     }
 
     @Override
@@ -689,7 +780,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 loadData();
                 break;
             case R.id.btn_print:
-
+                printWeiPosPerform("");
+                break;
+            case R.id.btn_print_bill:
+                printWeiPosBill("");
                 break;
         }
     }
